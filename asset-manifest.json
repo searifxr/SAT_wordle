@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/SAT_wordle/static/css/main.2884f35d.css",
+    "main.js": "/SAT_wordle/static/js/main.773ecca2.js",
+    "static/js/453.a59ed080.chunk.js": "/SAT_wordle/static/js/453.a59ed080.chunk.js",
+    "index.html": "/SAT_wordle/index.html",
+    "main.2884f35d.css.map": "/SAT_wordle/static/css/main.2884f35d.css.map",
+    "main.773ecca2.js.map": "/SAT_wordle/static/js/main.773ecca2.js.map",
+    "453.a59ed080.chunk.js.map": "/SAT_wordle/static/js/453.a59ed080.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2884f35d.css",
+    "static/js/main.773ecca2.js"
+  ]
+}
