@@ -23,4 +23,8 @@ yarn-debug.log*
 yarn-error.log*
 
 #Backend
-.firebase*
+**/firebaseConfig.js
+
+#Scripts
+**/Words.py
+**/gooogle-10000-english

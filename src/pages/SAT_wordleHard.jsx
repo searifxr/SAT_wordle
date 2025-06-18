@@ -23,6 +23,34 @@ function SATWordleHard({
 }) {
   
     useEffect(() => {
+        const savedBoard = localStorage.getItem('HardBoard');
+        if (savedBoard) {
+          setBoard(JSON.parse(savedBoard));
+        }
+        const savedAttempt = localStorage.getItem('HardCurrentAttempt');
+        if (savedAttempt) {
+          setCurrentAttempt(JSON.parse(savedAttempt));
+        }
+        const savedBoardColors = localStorage.getItem('HardBoardColors');
+        if (savedBoardColors) {
+          setBoardColors(JSON.parse(savedBoardColors));
+        }
+      }, []);
+    
+      // Save board to localStorage whenever it changes
+      useEffect(() => {
+        localStorage.setItem('HardBoard', JSON.stringify(board));
+      }, [board]);
+    
+      useEffect(() => {
+        localStorage.setItem('HardCurrentAttempt', JSON.stringify(currentAttempt));
+      }, [currentAttempt]);
+    
+      useEffect(() => {
+        localStorage.setItem('HardBoardColors', JSON.stringify(boardColors));
+      }, [boardColors]);
+
+    useEffect(() => {
       
       const now = new Date();
       const nextMidnight = new Date(Date.UTC(
@@ -34,17 +62,19 @@ function SATWordleHard({
   
       
       const timer = setTimeout(() => {
-        setWordOftheDay(getWordOfTheDay("medium"));
+        setWordOftheDay(getWordOfTheDay("hard"));
         setBoardColors(
-          Array(6).fill().map(() => Array(6).fill(""))
+          Array(6).fill().map(() => Array(4).fill(""))
         );
-        setBoard(Array(6).fill().map(() => Array(6).fill("")))
+        setBoard(Array(6).fill().map(() => Array(4).fill("")))
+        localStorage.removeItem('HardBoard');
+        localStorage.removeItem('HardCurrentAttempt');
+        localStorage.removeItem('HardBoardColors');
       }, msUntilMidnight);
   
       
       return () => clearTimeout(timer);
-    }, [wordOftheDay, board, boardColors, setWordOftheDay,setBoard, setBoardColors]);
-
+    }, [wordOftheDay,board,boardColors, setWordOftheDay,setBoard, setBoardColors]);
   const GameOberModal = ({isOpen, onClose, hasWon, attempt}) => {
     const handleSignup = () => {
       setTempGameResult({

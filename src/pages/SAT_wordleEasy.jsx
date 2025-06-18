@@ -21,7 +21,34 @@ function SATWordleEasy({
   showSignUp, setShowSignUp,
   CompletedGame, setCompletedGame
 }) {
-  
+    useEffect(() => {
+        const savedBoard = localStorage.getItem('EasyBoard');
+        if (savedBoard) {
+          setBoard(JSON.parse(savedBoard));
+        }
+        const savedAttempt = localStorage.getItem('EasyCurrentAttempt');
+        if (savedAttempt) {
+          setCurrentAttempt(JSON.parse(savedAttempt));
+        }
+        const savedBoardColors = localStorage.getItem('EasyBoardColors');
+        if (savedBoardColors) {
+          setBoardColors(JSON.parse(savedBoardColors));
+        }
+      }, []);
+    
+      // Save board to localStorage whenever it changes
+      useEffect(() => {
+        localStorage.setItem('EasyBoard', JSON.stringify(board));
+      }, [board]);
+    
+      useEffect(() => {
+        localStorage.setItem('EasyCurrentAttempt', JSON.stringify(currentAttempt));
+      }, [currentAttempt]);
+    
+      useEffect(() => {
+        localStorage.setItem('EasyBoardColors', JSON.stringify(boardColors));
+      }, [boardColors]);
+
     useEffect(() => {
       
       const now = new Date();
@@ -34,11 +61,14 @@ function SATWordleEasy({
   
       
       const timer = setTimeout(() => {
-        setWordOftheDay(getWordOfTheDay("medium"));
+        setWordOftheDay(getWordOfTheDay("easy"));
         setBoardColors(
           Array(6).fill().map(() => Array(4).fill(""))
         );
         setBoard(Array(6).fill().map(() => Array(4).fill("")))
+        localStorage.removeItem('EasyBoard');
+        localStorage.removeItem('EasyCurrentAttempt');
+        localStorage.removeItem('EasyBoardColors');
       }, msUntilMidnight);
   
       

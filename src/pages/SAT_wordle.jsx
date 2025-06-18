@@ -63,6 +63,35 @@ function SATWordle() {
   const [HardshowSignUp, setHardShowSignUp] = useState(false);
   const [HardcompletedGame, setHardcompletedGame] = useState(false);
 
+  // Load board from localStorage on mount
+  useEffect(() => {
+    const savedBoard = localStorage.getItem('mediumBoard');
+    if (savedBoard) {
+      setBoard(JSON.parse(savedBoard));
+    }
+    const savedAttempt = localStorage.getItem('mediumCurrentAttempt');
+    if (savedAttempt) {
+      setCurrentAttempt(JSON.parse(savedAttempt));
+    }
+    const savedBoardColors = localStorage.getItem('mediumBoardColors');
+    if (savedBoardColors) {
+      setBoardColors(JSON.parse(savedBoardColors));
+    }
+  }, []);
+
+  // Save board to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('mediumBoard', JSON.stringify(board));
+  }, [board]);
+
+  useEffect(() => {
+    localStorage.setItem('mediumCurrentAttempt', JSON.stringify(currentAttempt));
+  }, [currentAttempt]);
+
+  useEffect(() => {
+    localStorage.setItem('mediumBoardColors', JSON.stringify(boardColors));
+  }, [boardColors]);
+
   useEffect(() => {
     
     const now = new Date();
@@ -80,6 +109,11 @@ function SATWordle() {
         Array(6).fill().map(() => Array(5).fill(""))
       );
       setBoard(Array(6).fill().map(() => Array(5).fill("")))
+      setCurrentAttempt({ attempt: 0, letterPos: 0 });
+      // Optionally clear localStorage for a fresh start
+      localStorage.removeItem('mediumBoard');
+      localStorage.removeItem('mediumCurrentAttempt');
+      localStorage.removeItem('mediumBoardColors');
     }, msUntilMidnight);
 
     
