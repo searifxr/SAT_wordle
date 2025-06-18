@@ -2,6 +2,10 @@
 
 SAT Wordle is a vocabulary-based Wordle game built with React. Each day, players are challenged to guess SAT-level words in easy, medium, or hard modes. The app includes definitions and fun facts for each word, making it a great way to build your vocabulary while having fun!
 
+## Deployed Link:
+[Sat Wordle Game](https://searifxr.github.io/SAT_wordle)
+
+
 ## Features
 
 - **Daily Word Challenge:** The word resets every day at midnight UTC.
