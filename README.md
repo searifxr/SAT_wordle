@@ -5,7 +5,9 @@ SAT Wordle is a vocabulary-based Wordle game built with React. Each day, players
 ## Deployed Link:
 [Sat Wordle Game](https://searifxr.github.io/SAT_wordle)
 
-
+## Change log:
+- June 18: Launched game
+- June 19: Fixed the "winning more than once in a day" bug
 ## Features
 
 - **Daily Word Challenge:** The word resets every day at midnight UTC.
