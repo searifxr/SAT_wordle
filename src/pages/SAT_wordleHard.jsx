@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './css/SAT_wordle.css'
 import wordList from '../Dictionary/words.json'
-import { ref, set, push } from 'firebase/database';
+import { ref, push, get } from 'firebase/database';
 import { auth, database } from '../Backend/firebase/firebaseConfig';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, } from 'firebase/auth'
 import { getWordOfTheDay } from './Utility/getWordOfTheDay'
@@ -21,35 +21,39 @@ function SATWordleHard({
   showSignUp, setShowSignUp,
   CompletedGame, setCompletedGame
 }) {
-  
-    useEffect(() => {
-        const savedBoard = localStorage.getItem('HardBoard');
-        if (savedBoard) {
-          setBoard(JSON.parse(savedBoard));
-        }
-        const savedAttempt = localStorage.getItem('HardCurrentAttempt');
-        if (savedAttempt) {
-          setCurrentAttempt(JSON.parse(savedAttempt));
-        }
-        const savedBoardColors = localStorage.getItem('HardBoardColors');
-        if (savedBoardColors) {
-          setBoardColors(JSON.parse(savedBoardColors));
-        }
-      }, []);
-    
-      // Save board to localStorage whenever it changes
-      useEffect(() => {
-        localStorage.setItem('HardBoard', JSON.stringify(board));
-      }, [board]);
-    
-      useEffect(() => {
-        localStorage.setItem('HardCurrentAttempt', JSON.stringify(currentAttempt));
-      }, [currentAttempt]);
-    
-      useEffect(() => {
-        localStorage.setItem('HardBoardColors', JSON.stringify(boardColors));
-      }, [boardColors]);
+  function getDateString(timestamp) {
+    const d = new Date(timestamp);
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${month}-${day}`;
+  }
 
+  async function alreadyHasWin({ username, word, timestamp }) {
+    const leaderboardRef = ref(database, `leaderboard/hard`);
+    const snapshot = await get(leaderboardRef);
+    const todayString = getDateString(timestamp);
+    const user = (username || "Anonymous").toLowerCase();
+    const w = (word || "").toUpperCase();
+  
+    if (snapshot.exists()) {
+      let found = false;
+      snapshot.forEach(child => {
+        const entry = child.val();
+        const entryUsername = (entry.username || "").toLowerCase();
+        const entryWord = (entry.word || "").toUpperCase();
+        const entryDate = getDateString(entry.timestamp);
+        if (
+          entryUsername === user &&
+          entryWord === w &&
+          entryDate === todayString
+        ) {
+          found = true;
+        }
+      });
+      return found;
+    }
+    return false;
+  }
     useEffect(() => {
       
       const now = new Date();
@@ -64,9 +68,9 @@ function SATWordleHard({
       const timer = setTimeout(() => {
         setWordOftheDay(getWordOfTheDay("hard"));
         setBoardColors(
-          Array(6).fill().map(() => Array(4).fill(""))
+          Array(6).fill().map(() => Array(6).fill(""))
         );
-        setBoard(Array(6).fill().map(() => Array(4).fill("")))
+        setBoard(Array(6).fill().map(() => Array(6).fill("")))
         localStorage.removeItem('HardBoard');
         localStorage.removeItem('HardCurrentAttempt');
         localStorage.removeItem('HardBoardColors');
@@ -131,80 +135,95 @@ function SATWordleHard({
     const [password, setPassword] = useState("");
     const [signUpError, setSignUpError] = useState("");
     const handleSignUp = async(e) => {
-      e.preventDefault();
-      setSignUpError("");
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        if(tempGameResult) {
-          const userGameRef = ref(database, `hard_Difficulty/user/${userCredential.user.uid}/gameResults/${tempGameResult.timestamp}`)
-          await set(userGameRef, tempGameResult);
-          const leaderboardRef = ref(database, `leaderboard/hard`);
-          await push(leaderboardRef, {
-            ...tempGameResult,
-            username: userCredential.user.email || "Anonymous"
-          });
+          e.preventDefault();
+          setSignUpError("");
+          try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            if(tempGameResult) {
+              // const userGameRef = ref(database, `Medium_Difficulty/user/${userCredential.user.uid}/gameResults/${tempGameResult.timestamp}`)
+              // await set(userGameRef, tempGameResult);
+    
+              // Only push to leaderboard:
+              const username = userCredential.user.email || "Anonymous";
+              const alreadyWon = await alreadyHasWin({
+                username,
+                word: tempGameResult.word,
+                timestamp: tempGameResult.timestamp
+              });
+              if (!alreadyWon) {
+                const leaderboardRef = ref(database, `leaderboard/hard`);
+                await push(leaderboardRef, {
+                  ...tempGameResult,
+                  username
+                });
+              }
+            }
+            setTempGameResult(null);
+            onClose();
+            alert("Sign up successful! Stats saved.");
+            setShowModal(false);
+            setShowSignUp(false);
+          }
+          catch (error) {
+            setSignUpError(error.message);
+          }
         }
-        setTempGameResult(null);
-        onClose();
-        alert("Sign up successful! Stats saved.");
-        setShowModal(false);
-        setShowSignUp(false);
+    
+        if(!isOpen) return null;
+        return (
+          <div className='modal-overlay'>
+            <div className='modal-content'>
+              <h2>Sign Up</h2>
+              <form onSubmit={handleSignUp}>
+                <input
+                  type="email"
+                  placeholder='Email'
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder='Password'
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                />
+                <button type="submit">Sign Up</button>
+                <button type="button" onClick={onClose}>Cancel</button>
+                {signUpError && <p style={{color: "red"}}>{signUpError}</p>}
+              </form>
+            </div>
+          </div>
+        )
       }
-      catch (error) {
-        setSignUpError(error.message);
-      }
-    }
-
-    if(!isOpen) return null;
-    return (
-      <div className='modal-overlay'>
-        <div className='modal-content'>
-          <h2>Sign Up</h2>
-          <form onSubmit={handleSignUp}>
-            <input
-              type="email"
-              placeholder='Email'
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder='Password'
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-            <button type="submit">Sign Up</button>
-            <button type="button" onClick={onClose}>Cancel</button>
-            {signUpError && <p style={{color: "red"}}>{signUpError}</p>}
-          </form>
-        </div>
-      </div>
-    )
-  }
-
-  const handleGoogleSignIn = async(gameResult) => {
-      const provider = new GoogleAuthProvider();
-      try {
-        const userCredential = await signInWithPopup(auth, provider);
-        if (gameResult) {
-          const userGameRef = ref(database, `hard_Difficulty/user/${userCredential.user.uid}/gameResults/${gameResult.timestamp}`);
-          await set(userGameRef, gameResult);
-  
-          const leaderboardRef = ref(database, `leaderboard/hard`);
-          await push(leaderboardRef, {
-            ...gameResult,
-            username: userCredential.user.email || "Anonymous"
-          });
-        }
-        alert("Signed in with google!");
-        setShowSignUp(false);
-        setShowModal(false);
-      } catch(error) {
-        alert(error.message)
-      }
-    }
+    
+      const handleGoogleSignIn = async(gameResult) => {
+                const provider = new GoogleAuthProvider();
+                try {
+                  const userCredential = await signInWithPopup(auth, provider);
+                  if (gameResult) {
+                    const username = userCredential.user.email || "Anonymous";
+                    const alreadyWon = await alreadyHasWin({
+                      username,
+                      word: gameResult.word,
+                      timestamp: gameResult.timestamp
+                    });
+                    if (!alreadyWon) {
+                      const leaderboardRef = ref(database, `leaderboard/hard`);
+                      await push(leaderboardRef, {
+                        ...gameResult,
+                        username
+                      });
+                    }
+                  }
+                  alert("Signed in with google!");
+                  setShowSignUp(false);
+                  setShowModal(false);
+                } catch(error) {
+                  alert(error.message)
+                }
+              }
   const isWordInDictionary = (word) => {
     return wordList.hard.includes(word)
   }
@@ -261,27 +280,34 @@ function SATWordleHard({
     color: "white"
     }
   }
+  const today = new Date().toISOString().slice(0, 10);
+  const winKey = `hardHasWon-${today}`;
+  const hasWonToday = !!localStorage.getItem(winKey);
+
   const checkIfGuessed = () => {
     let currentRow = currentAttempt.attempt;
     let correct = true;
     let count = 0;
-    for(let i = 0; i < 6; i++)
-    {
-      if(boardColors[currentRow][i] !== "green")
-      {
+    for(let i = 0; i < 6; i++) {
+      if(boardColors[currentRow][i] !== "green") {
         break;
       }
       count++;
     }
-    if(count > 5) correct=false
-    
+    if(count !== 6) correct = false;
+
     if(correct) {
       setTimeout(()=> {
         setGuessedWord(true)
         setShowModal(true);
         setCompletedGame(true);
+
+        // Only count win if not already won today
+        if (!hasWonToday) {
+          // increment win count here
+          localStorage.setItem(winKey, "true");
+        }
       }, 1500)
-      
     } 
     else if(currentRow===5){
       setTimeout(()=>{
@@ -336,7 +362,6 @@ function SATWordleHard({
     else if(letter === "Del") Delete();
     else SelectLetter(letter);
   }
-
 
   return (
     <div>
